@@ -318,7 +318,7 @@ const createCheckoutUrl = ({
 
   const frontendUrl =
     process.env.FRONTEND_URL ||
-    "http://localhost:5173";
+    "https://pizzaro-frontend.vercel.app";
 
   const redirectUrl =
     `${frontendUrl}/orders` +
