@@ -1,181 +1,202 @@
-# Pizzaro Backend
+# 🍕 Pizzaro — Backend API
 
-Express and MongoDB API for the Pizzaro pizza ordering platform. The backend owns authentication, authorization, catalog data, order persistence, inventory, email workflows, and Safepay integration.
+The backend API powering **Pizzaro**, a full-stack pizza ordering platform.
 
-## Stack
+Built with **Node.js, Express, MongoDB, and Mongoose**, the API handles authentication, authorization, pizza catalog management, orders, inventory, email workflows, and Safepay payment processing.
 
-- Node.js and Express 5
-- MongoDB with Mongoose 9
-- JWT authentication with role-based admin authorization
-- bcryptjs password hashing
-- Nodemailer verification and password-reset email delivery
-- Safepay payment sessions and verification
-- CORS and dotenv configuration
+---
 
-## Requirements
+## ✨ Features
 
-- Node.js 18 or newer
-- MongoDB connection string
-- SMTP credentials for verification and password-reset email
-- Safepay merchant credentials for online payments
+### 🔐 Authentication & Authorization
 
-## Installation And Configuration
+* Customer registration
+* Email verification
+* JWT authentication
+* Password hashing with bcrypt
+* Forgot password
+* Password reset
+* Role-based admin authorization
+* Protected API routes
 
-```bash
+### 🍕 Pizza & Catalog
+
+* Pizza catalog API
+* Pizza creation and management
+* Pizza details
+* Admin catalog operations
+
+### 🛒 Orders
+
+* Customer order creation
+* Customer order history
+* Order ownership protection
+* Admin order management
+* Order status updates
+* Order deletion
+
+### 📦 Inventory
+
+* Ingredient inventory management
+* Stock quantity tracking
+* Stock threshold monitoring
+* Availability management
+* Inventory price management
+* Stock updates
+
+### 💳 Payments
+
+* Safepay sandbox integration
+* Payment session creation
+* Payment verification
+* Payment status tracking
+* Payment references
+* Pending order creation before checkout
+
+### 📧 Email
+
+* Email verification
+* Password reset emails
+* SMTP/Nodemailer integration
+
+---
+
+## 🧰 Tech Stack
+
+| Technology     | Purpose                   |
+| -------------- | ------------------------- |
+| **Node.js**    | Runtime                   |
+| **Express 5**  | REST API framework        |
+| **MongoDB**    | Database                  |
+| **Mongoose 9** | MongoDB ODM               |
+| **JWT**        | Authentication            |
+| **bcryptjs**   | Password hashing          |
+| **Nodemailer** | Email delivery            |
+| **Safepay**    | Online payments           |
+| **dotenv**     | Environment configuration |
+| **CORS**       | Cross-origin API access   |
+
+---
+
+## 📁 Project Structure
+
+```text id="m1d5ez"
+backend/
+├── config/
+│   ├── cloudinary.js
+│   ├── db.js
+│   └── safepay.js
+├── controllers/
+│   ├── adminController.js
+│   ├── authController.js
+│   ├── customerController.js
+│   ├── imageController.js
+│   ├── inventoryController.js
+│   ├── orderController.js
+│   ├── paymentController.js
+│   └── pizzaController.js
+├── jobs/
+│   └── stockChecker.js
+├── middleware/
+│   ├── adminMiddleware.js
+│   ├── authMiddleware.js
+│   └── uploadMiddleware.js
+├── models/
+│   ├── Inventory.js
+│   ├── Order.js
+│   ├── Pizza.js
+│   └── User.js
+├── routes/
+│   ├── adminRoutes.js
+│   ├── authRoutes.js
+│   ├── customerRoutes.js
+│   ├── imageRoute.js
+│   ├── inventoryRoutes.js
+│   ├── orderRoutes.js
+│   ├── paymentRoutes.js
+│   └── pizzaRoutes.js
+├── services/
+│   ├── emailService.js
+│   ├── paymentService.js
+│   └── stockService.js
+├── server.js
+├── package.json
+└── README.md
+```
+
+The backend follows a layered structure where:
+
+* **Routes** define API endpoints
+* **Middleware** handles authentication and authorization
+* **Controllers** process requests and coordinate operations
+* **Services** isolate external integrations and business operations
+* **Models** define MongoDB schemas
+* **MongoDB** stores application data
+
+---
+
+## 🚀 Getting Started
+
+### Requirements
+
+Before running the API, make sure you have:
+
+* **Node.js 18+**
+* MongoDB
+* SMTP credentials
+* Safepay merchant credentials
+
+### 1. Install dependencies
 npm install
 ```
 
-Create `backend/.env`:
+### Production Recommendations
 
-```env
-PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/pizzaro
-JWT_SECRET=replace-with-a-long-random-secret
-FRONTEND_URL=http://localhost:5173
+Before production deployment:
 
-EMAIL_USER=your-smtp-user
-EMAIL_PASS=your-smtp-password
+* Restrict CORS to the deployed frontend domain
+* Protect all pizza and inventory write endpoints
+* Add request validation
+* Add rate limiting to authentication and payment endpoints
+* Use deployment secret storage
+* Add centralized error handling
+* Avoid exposing raw internal errors
+* Add payment idempotency protection
+* Add database indexes for frequent queries
+* Add automated authorization and payment tests
 
-SAFE_PAY_BASE_URL=https://sandbox.api.getsafepay.com
-SAFE_PAY_PUBLIC_KEY=your-safepay-public-key
-SAFE_PAY_SECRET_KEY=your-safepay-secret-key
-SAFEPAY_ENV=sandbox
-SAFEPAY_INTENT=CYBERSOURCE
-```
+---
 
-Use the Safepay production base URL and production credentials only in a production deployment. Never commit `.env` files or expose `SAFE_PAY_SECRET_KEY`, `JWT_SECRET`, or SMTP credentials to the frontend.
+# 🧪 API Health Checks
 
-## Run
+Check whether the server is running:
 
-```bash
-npm start       # Start the API
-npm run dev     # Start with nodemon
-```
-
-The API listens on `http://localhost:5000` by default. `GET /` is a lightweight health response.
-
-## Architecture
-
-```text
-server.js
-  -> routes
-    -> middleware (JWT and admin role checks)
-      -> controllers (request validation and orchestration)
-        -> models (Mongoose schemas)
-          -> MongoDB
-        -> services (email, payment, stock)
-```
-
-`server.js` loads environment variables, connects to MongoDB, enables CORS and JSON parsing, and mounts the route modules. Controllers translate HTTP requests into domain operations; services isolate external integrations.
-
-## API Reference
-
-All paths below are prefixed with `/api`.
-
-### Authentication
-
-| Method | Path                          | Auth   | Purpose                                                   |
-| ------ | ----------------------------- | ------ | --------------------------------------------------------- |
-| `POST` | `/auth/register`              | Public | Create an unverified customer and send verification email |
-| `GET`  | `/auth/verify-email/:token`   | Public | Verify customer email                                     |
-| `POST` | `/auth/login`                 | Public | Validate credentials and return customer JWT              |
-| `POST` | `/auth/forgot-password`       | Public | Send password reset email                                 |
-| `POST` | `/auth/reset-password/:token` | Public | Set a new password                                        |
-| `POST` | `/admin/login`                | Public | Validate an admin account and return admin JWT            |
-
-### Catalog and orders
-
-| Method   | Path                 | Auth          | Purpose                                         |
-| -------- | -------------------- | ------------- | ----------------------------------------------- |
-| `GET`    | `/pizzas`            | Public        | List pizzas                                     |
-| `GET`    | `/pizzas/:id`        | Public        | Read one pizza                                  |
-| `POST`   | `/pizzas`            | Current route | Create pizza                                    |
-| `PUT`    | `/pizzas/:id`        | Current route | Update pizza                                    |
-| `DELETE` | `/pizzas/:id`        | Current route | Delete pizza                                    |
-| `GET`    | `/orders`            | JWT           | Admin sees all orders; customer sees own orders |
-| `GET`    | `/orders/:id`        | JWT           | Admin sees any order; customer sees own order   |
-| `POST`   | `/orders`            | JWT           | Create an order for the authenticated customer  |
-| `PATCH`  | `/orders/:id/status` | JWT + admin   | Update order status                             |
-| `DELETE` | `/orders/:id`        | JWT           | Admin deletes any; customer deletes own         |
-
-### Inventory, customers, and payments
-
-| Method   | Path                   | Auth          | Purpose                                   |
-| -------- | ---------------------- | ------------- | ----------------------------------------- |
-| `GET`    | `/inventory`           | Current route | List inventory                            |
-| `GET`    | `/inventory/:id`       | Current route | Read inventory item                       |
-| `POST`   | `/inventory`           | Current route | Create inventory item                     |
-| `PUT`    | `/inventory/:id`       | Current route | Update inventory item                     |
-| `PATCH`  | `/inventory/:id/stock` | Current route | Update quantity, price, and availability  |
-| `DELETE` | `/inventory/:id`       | Current route | Delete inventory item                     |
-| `GET`    | `/admin/customers`     | JWT + admin   | List customers                            |
-| `POST`   | `/payment/create`      | JWT           | Create pending order and Safepay checkout |
-| `POST`   | `/payment/verify`      | JWT           | Verify Safepay payment and update order   |
-| `GET`    | `/payment/test`        | Public        | Confirm payment route registration        |
-
-The `Current route` entries reflect the implementation as it exists today. They should be protected with `protect` and, where appropriate, `admin` before production deployment; frontend route guards do not protect API endpoints by themselves.
-
-## Domain Models
-
-- **User**: name, unique email, hashed password, role, verification state, and password reset tokens.
-- **Pizza**: catalog item data used by menu and pizza management screens.
-- **Order**: customer identity, line items, totals, order status, payment status, payment method, and Safepay references.
-- **Inventory**: ingredient category, quantity, unit, threshold, price, image, and availability.
-
-Order ownership is evaluated using the authenticated JWT email. The create-order controller deliberately takes `customerEmail` from the token rather than trusting the request body.
-
-## Request Flows
-
-### Authentication
-
-```text
-Register -> hash password -> save verification token -> send email
-Verify token -> mark user verified
-Login -> compare password -> issue 7-day JWT with id/email/role
-```
-
-`authMiddleware` requires `Authorization: Bearer <token>`. `adminMiddleware` then requires `req.user.role === "admin"`.
-
-### Customer order
-
-```text
-Authenticated client -> POST /orders -> Order document (Pending)
-Customer -> GET /orders -> own orders only
-Admin -> GET /orders -> all orders
-Admin -> PATCH /orders/:id/status -> lifecycle update
-```
-
-### Safepay order
-
-```text
-POST /payment/create
-  -> validate cart and total
-  -> load authenticated user
-  -> create pending Order
-  -> create Safepay session and tracker
-  -> return checkout data
-
-POST /payment/verify
-  -> verify tracker with Safepay
-  -> update paymentStatus and paymentReference
-```
-
-## Security And Production Checklist
-
-- Protect pizza and inventory write endpoints with JWT and admin authorization.
-- Restrict CORS to the deployed frontend origin instead of allowing every origin.
-- Add request validation and rate limiting to authentication and payment endpoints.
-- Use a secrets manager or deployment secret store for all credentials.
-- Add centralized error handling and structured logging; avoid returning raw `error.message` values in production.
-- Use an idempotency strategy for payment verification and order creation.
-- Add indexes for frequent order queries, especially `customerEmail` and `createdAt`.
-- Add automated API tests for authorization boundaries, payment failure, and order ownership.
-
-## Operational Checks
-
-```bash
+```bash id="z2v5k9"
 curl http://localhost:5000/
+```
+
+Check whether the payment router is mounted:
+
+```bash id="r4g7p1"
 curl http://localhost:5000/api/payment/test
 ```
 
-These checks confirm that the process is listening and that the payment router is mounted. They do not verify MongoDB, email, or Safepay credentials.
+These endpoints confirm that the server and payment route are reachable.
+
+They **do not** verify MongoDB, email, or Safepay credentials.
+
+---
+
+## 👨‍💻 Author
+
+**Hamad Azam**
+
+Built as part of the **OIBSIP Web Development — Level 3 Task 1** project.
+
+---
+
+## ⭐ Pizzaro
+
+A full-stack pizza ordering platform combining a modern React frontend with a structured Express + MongoDB backend.
+
+**🍕 Build your pizza. Place your order. Track it.**
